@@ -7,3 +7,7 @@ services:
       dockerfile: Dockerfile
     ports:
       - "9001:8000"
+    volumes:
+      - .:/app
+      - /home/application_files/website_backend/settings.ini:/app/config/settings.ini
+
