@@ -1,12 +1,11 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 import csv
 import os
 from configparser import RawConfigParser
 from pathlib import Path
 from .models import Submission
-
-
+from .utils import process_api_key
 
 config = RawConfigParser()
 config.read("config/settings.ini")
@@ -32,18 +31,21 @@ if not os.path.exists(csv_file_path):
     with open(csv_file_path, mode="w", newline="", encoding="utf-8") as file:
         writer = csv.writer(file)
         writer.writerow(["Name", "Email", "Message"])  # Write header
-        
-        
+
+  
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
 
 @app.post("/submit/")
-async def submit_data(submission: Submission):
-    print(submission)
+async def submit_data(submission: Submission, api_key: str = Header(None)):
     """
     Endpoint to accept data from frontend and save it to a CSV file using a model.
     """
+    processed = process_api_key(api_key=api_key, valid_key=config.get('api_settings', 'APP_API_KEY'))
+    if not processed:
+        return {"message": "Unauthorized"}
+    
     csv_file_path = "submissions.csv"
     try:
         # Save the submission data to the CSV file
